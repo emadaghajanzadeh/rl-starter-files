@@ -52,7 +52,6 @@ model_dir = utils.get_model_dir(args.model)
 agent = utils.Agent(env.observation_space, env.action_space, model_dir,
                     argmax=args.argmax, use_memory=args.memory, use_text=args.text)
 print("Agent loaded\n")
-
 # Run the agent
 
 if args.gif:
@@ -62,6 +61,7 @@ if args.gif:
 
 # Create a window to view the environment
 env.render()
+
 
 for episode in range(args.episodes):
     obs, _ = env.reset()
@@ -75,11 +75,11 @@ for episode in range(args.episodes):
         obs, reward, terminated, truncated, _ = env.step(action)
         done = terminated | truncated
         agent.analyze_feedback(reward, done)
-
         if done:
+            print(reward)
             break
 
-if args.gif:
-    print("Saving gif... ", end="")
-    write_gif(numpy.array(frames), args.gif+".gif", fps=1/args.pause)
-    print("Done.")
+# if args.gif:
+#     print("Saving gif... ", end="")
+#     write_gif(numpy.array(frames), args.gif+".gif", fps=1/args.pause)
+#     print("Done.")

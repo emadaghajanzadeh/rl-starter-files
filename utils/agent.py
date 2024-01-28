@@ -3,7 +3,8 @@ import torch
 import utils
 from .other import device
 from model import ACModel
-
+from torchsummary import summary
+import numpy as np
 
 class Agent:
     """An agent.
@@ -16,6 +17,8 @@ class Agent:
                  argmax=False, num_envs=1, use_memory=False, use_text=False):
         obs_space, self.preprocess_obss = utils.get_obss_preprocessor(obs_space)
         self.acmodel = ACModel(obs_space, action_space, use_memory=use_memory, use_text=use_text)
+        self.obs_space = obs_space
+        self.action_space = action_space
         self.argmax = argmax
         self.num_envs = num_envs
 
@@ -54,3 +57,13 @@ class Agent:
 
     def analyze_feedback(self, reward, done):
         return self.analyze_feedbacks([reward], [done])
+
+    def acmodel_fe_summary(self):
+        w , h , c = self.obs_space["image"]
+        summary(self.acmodel.image_conv, (c, w, h))
+
+    def models_summary(self):
+        print("ACModel_FeatureExtractor:")
+        self.acmodel_fe_summary()
+
+        

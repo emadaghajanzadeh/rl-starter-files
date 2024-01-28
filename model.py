@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.distributions.categorical import Categorical
 import torch_ac
-
+from torchsummary import summary
 
 # Function from https://github.com/ikostrikov/pytorch-a2c-ppo-acktr/blob/master/model.py
 def init_params(m):
@@ -30,12 +30,13 @@ class ACModel(nn.Module, torch_ac.RecurrentACModel):
             nn.MaxPool2d((2, 2)),
             nn.Conv2d(16, 32, (2, 2)),
             nn.ReLU(),
-            nn.Conv2d(32, 64, (2, 2)),
-            nn.ReLU()
+            # nn.Conv2d(32, 64, (2, 2)),
+            # nn.ReLU()
         )
         n = obs_space["image"][0]
         m = obs_space["image"][1]
-        self.image_embedding_size = ((n-1)//2-2)*((m-1)//2-2)*64
+        # self.image_embedding_size = ((n-1)//2-2)*((m-1)//2-2)*64
+        self.image_embedding_size = ((n-1)//2-1)*((m-1)//2-1)*32
 
         # Define memory
         if self.use_memory:
@@ -106,3 +107,26 @@ class ACModel(nn.Module, torch_ac.RecurrentACModel):
     def _get_embed_text(self, text):
         _, hidden = self.text_rnn(self.word_embedding(text))
         return hidden[-1]
+
+class MaskNetwork(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.mask_constructor = nn.Sequential(
+            nn.ConvTranspose2d(32, 16, kernel_size=2, stride=1, padding=0),
+            nn.ReLU(),
+            nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
+            nn.ReLU(),
+            nn.ConvTranspose2d(16, 3, kernel_size=2, stride=1, padding=0),
+            nn.Sigmoid()
+        )
+
+    def forward(self, encoded_state):
+        if encoded_state.ndim == 3:
+            encoded_state = encoded_state.unsqueeze(0)
+        mask = self.mask_constructor(encoded_state)
+        return mask
+
+
+if __name__ == "__main__":
+    mask_net = MaskNetwork()
+    summary(mask_net, (32, 2, 2))
